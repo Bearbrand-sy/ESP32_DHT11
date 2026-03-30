@@ -14,16 +14,20 @@ if ($temperature !== null && $humidity !== null) {
     $conn = new mysqli($servername, $username, $password, $dbname);
     
     if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
+        http_response_code(500);
+        echo json_encode(['error' => 'Database connection failed']);
+        exit();
     }
     
-    $sql = "INSERT INTO sensor_readings (temperature, humidity) VALUES (?, ?)";
+    $sql = "INSERT INTO sensor_readings (temperature, humidity, reading_time) VALUES (?, ?, NOW())";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("dd", $temperature, $humidity);
     
     if ($stmt->execute()) {
-        echo "SUCCESS: Data saved - Temp: $temperature°C, Humidity: $humidity%";
+        // FIXED: Proper string concatenation to avoid undefined variable warning
+        echo "SUCCESS: Data saved - Temp: " . $temperature . "°C, Humidity: " . $humidity . "%";
     } else {
+        http_response_code(500);
         echo "ERROR: " . $stmt->error;
     }
     
@@ -31,6 +35,8 @@ if ($temperature !== null && $humidity !== null) {
     $conn->close();
     exit(); // Stop execution after saving data
 }
+
+// Dashboard continues to load HTML below...
 ?>
 
 <!DOCTYPE html>
@@ -153,7 +159,7 @@ body {
 }
 .chart-section {
     flex: 2;
-    min-width: 300px;
+    min-width: 350px;
 }
 .chart-card {
     background: rgba(15, 20, 35, 0.6);
